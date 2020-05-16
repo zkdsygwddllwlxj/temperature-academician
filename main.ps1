@@ -23,6 +23,20 @@ function file_modification_date ($filepath)  # 获取文件最后一次修改日
     $modificationdate=$modificationdate.Trim("`n`r").Split("")[0]
     return $modificationdate  # 函数返回值：文件最后一次修改日期
 }
+function produce_results($date,$cpu_max,$cpu_min,$gpu_max,$gpu_min)  #生成每日输出结果
+{
+    $cpu_diff=$cpu_max-$cpu_min
+    $gpu_diff=$gpu_max-$gpu_min
+    $result=$date+" "*(33-$date.Length)+$cpu_max+" "*33+$cpu_min+" "*16+$cpu_diff+" "*15+$gpu_max+" "*33+$gpu_min+" "*16+$gpu_diff
+    return $result
+}
+function reset  # 重置文件的值
+{
+    0 > $PSScriptRoot\cpumax
+    100 > $PSScriptRoot\cpumin
+    0 > $PSScriptRoot\gpumax
+    100 > $PSScriptRoot\gpumin
+}
 $cpu_max_path=$PSScriptRoot+"\cpumax"
 $cpu_max_exist=Test-path $cpu_max_path  # 检测文件cpumax是否存在
 $cpu_min_path=$PSScriptRoot+"\cpumin"
@@ -60,7 +74,8 @@ if ($gpumin_modified_date -ne$now_date)  #  文件gpumin修改日期不是当前
     $cpu_min=Get-Content $PSScriptRoot\cpumin   # 读取文件cpumin的值
     $gpu_max=Get-Content $PSScriptRoot\gpumax   # 读取文件gpumax的值
     $gpu_min=Get-Content $PSScriptRoot\gpumin   # 读取文件gpumin的值
-    $result=$gpumin_modified_date+"                        "+$cpu_max+"                                 "+$cpu_min+"                                 "+$gpu_max+"                                 "+$gpu_min
+    $result=produce_results $gpumin_modified_date $cpu_max $cpu_min $gpu_max $gpu_min
+    reset
     $result >> $PSScriptRoot\result.txt  # 上一次关机当天的结果写入文件
 }
 do{
@@ -93,11 +108,8 @@ do{
     }else{
         $last_time_str=$last_time|Out-String
         $date=$last_time_str.Trim("`n`r").Split("")[0]  # 获取昨天的日期
-        $result=$date+" "*(33-$date.Length)+$cpu_max+" "*33+$cpu_min+" "*33+$gpu_max+" "*33+$gpu_min
-        0 > $PSScriptRoot\cpumax  # 重置文件的值
-        100 > $PSScriptRoot\cpumin
-        0 > $PSScriptRoot\gpumax
-        100 > $PSScriptRoot\gpumin
+        $result=produce_results $date $cpu_max $cpu_min $gpu_max $gpu_min
+        reset
         $result >> $PSScriptRoot\result.txt  # 昨天的记录结果写入文件
         $last_day=$now_day
         $last_time=$now_time
